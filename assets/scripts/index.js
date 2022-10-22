@@ -1,3 +1,5 @@
+const game = new RockPaperScissors(3)
+
 //Seleciona os botões
 const btnRock = document.getElementById('rock')
 const btnPaper = document.getElementById('paper')
@@ -7,16 +9,38 @@ const btnReset = document.getElementById('reset')
 const btnAudio = document.getElementById('audio')
 
 //Seleciona áreas da pontuação e da escolha
-const displayPlayerScore = document.querySelector('.player-score')
-const displayCpuScore = document.querySelector('.cpu-score')
+const displayPlayerScore = document.querySelector('.player-score span')
+const displayCpuScore = document.querySelector('.cpu-score span')
 const displayPlayerChoice = document.querySelector('.player-choice')
 const displayCpuChoice = document.querySelector('.cpu-choice')
 
+//Seleciona as mensagens de feedback
+const userWon = document.querySelector('.user-won')
+const cpuWon = document.querySelector('.cpu-won')
+const tieGame = document.querySelector('.tie-game')
+const endMessage = document.querySelector('.end-message')
+
+//Seleciona os audios
+const bgAudio = document.getElementById('game-bg-audio')
+const winAudio = document.getElementById('win-audio')
+const loseAudio = document.getElementById('lose-audio')
+const tieAudio = document.getElementById('tie-audio')
+let audioActive = true
+
+//Configura volume dos audios
+bgAudio.volume = .15
+winAudio.volume = .3
+loseAudio.volume = .3
+tieAudio.volume = .3
+
 //Habilita os botões de escolha
-function enableButtons() {
+function startGame() {
     btnRock.removeAttribute('disabled')
     btnPaper.removeAttribute('disabled')
     btnScissors.removeAttribute('disabled')
+    if(audioActive) {
+        bgAudio.play()
+    }
 }
 
 //Desabilita os botões de escolha
@@ -26,11 +50,6 @@ function disableButtons() {
     btnScissors.setAttribute('disabled', true)
 }
 
-const game = new RockPaperScissors(3)
-//1. Ao clicar no botão start, habilita os botões de escolha
-btnStart.onclick = enableButtons
-//2. Ao clicar em um botão de escolha, inicia-se um round
-
 function displayChoiceImage(element, choice) {
     element.innerHTML = ''
     const image = document.createElement('img')
@@ -39,23 +58,88 @@ function displayChoiceImage(element, choice) {
     element.appendChild(image)
 }
 
+function checkWinner() {
+    if(game.roundWinner === 'player') {
+        winAudio.currentTime = 0
+        winAudio.play()
+        displayPlayerChoice.classList.add('animate-blink')
+    } else if (game.roundWinner === 'cpu') {
+        loseAudio.currentTime = 0
+        loseAudio.play()
+        displayCpuChoice.classList.add('animate-blink')
+    } else {
+        tieAudio.currentTime = 0
+        tieAudio.play()
+        displayPlayerChoice.classList.add('animate-blink')
+        displayCpuChoice.classList.add('animate-blink')
+    }
+
+
+    if(game.checkGameOver()) {
+        disableButtons()
+        //Exibindo a área de mensagens
+        endMessage.style.display = 'block'
+        //Exibe as mensagens de vitória, derrota ou empate
+        if(game.gameWinner === 'player') {
+            userWon.style.display = 'block'
+        } else if (game.gameWinner === 'cpu') {
+            cpuWon.style.display = 'block'
+        } else {
+            tieGame.style.display = 'block'
+        }
+    }
+}
+
+function removeBlink() {
+    displayPlayerChoice.classList.remove('animate-blink')
+    displayCpuChoice.classList.remove('animate-blink')
+}
+
 //Função que inicia um novo round
 function playGame(event) {
+    removeBlink()
+
     const button = event.currentTarget
     const choice = button.getAttribute('id')
     const round = game.play(choice)
 
     displayChoiceImage(displayPlayerChoice, choice)
     displayChoiceImage(displayCpuChoice, round.cpuChoice)
+
+    displayPlayerScore.innerHTML = round.playerPoints
+    displayCpuScore.innerHTML = round.cpuPoints
+
+    checkWinner()
 }
 
+function resetGame() {
+    game.reset()
+    endMessage.style.display = 'none'
+    userWon.style.display = 'none'
+    cpuWon.style.display = 'none'
+    tieGame.style.display = 'none'
+    displayPlayerScore.innerHTML = game.playerPoints
+    displayCpuScore.innerHTML = game.cpuPoints
+    removeBlink()
+}
+
+function changeAudio() {
+    if(audioActive) {
+        bgAudio.pause()
+        audioActive = false
+        btnAudio.innerHTML = 'Music OFF'
+    } else {
+        bgAudio.play()
+        audioActive = true
+        btnAudio.innerHTML = 'Music ON'
+    }
+}
+
+btnAudio.onclick = changeAudio
+btnStart.onclick = startGame
+btnReset.onclick = resetGame
 //Seleciona os botões de escolha
 const choiceBtns = document.getElementsByClassName('choice-button')
 for(let button of choiceBtns) {
     button.onclick = playGame
 }
-//3. Ao iniciar um round a escolha do player e a escolha da CPU devem ser exibidas
-//4. Ao fim do round a pontuação do player e a pontuação da CPU devem ser exibidas
-//5. A cada round deve-se verificar se gameOver
-
-
